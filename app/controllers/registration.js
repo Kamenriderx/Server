@@ -1,20 +1,24 @@
 const connection = require("../../config/connection");
-
-function addUser(req, res) {
-  connection
-    .query('CALL SP_LOGIN(:name,:password)', {
-      replacements: { name: req.body.name, password: req.body.password },
+const authToken = require("../../utils/authToken");
+async function addUser(req, res) {
+    const {name,password} = req.body;
+    connection
+    .query("CALL SP_LOGIN(:name,:password)", {
+      replacements: { name, password}
     })
     .then((result) => {
+        const token = authToken({
+            name
+        });
       res.status(200).json({
-        response: result,
+        token
       });
     }).catch(error =>{
-        res.status(400).json({
-          error: error,
+        res.status(500).json({
+          error: "Error de conexión a la base de datos",
         });
     });
-  console.log(req.body.name,req.body.password );
+
 }
 
 module.exports = {

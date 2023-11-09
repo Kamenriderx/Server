@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const { createLogger, format, transports } = require("winston");
-const { Sequelize } = require("sequelize") ; // Corrected import here
+const { Sequelize } = require("sequelize") ; 
 dotenv.config();
 
 const logger = createLogger({
