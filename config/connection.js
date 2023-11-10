@@ -20,13 +20,25 @@ const sequelizeOptions = {
   logging: false,
 };
 
-module.exports  = new Sequelize(
-  process.env.DATABASE,
-  process.env.USER,
-  'Mas##45new',
-  {
-    host: process.env.HOST,
-    dialect: "mysql",
-    ...sequelizeOptions,
-  }
-);
+const connection = new Sequelize(
+    process.env.DATABASE,
+    process.env.USER,
+    'Mas##45new',
+    {
+      host: "142.44.161.115",
+      dialect: "mysql",
+      ...sequelizeOptions,
+    }
+  );
+
+connection
+  .authenticate()
+  .then(() => {
+    logger.info("Conexión a la base de datos establecida con éxito.");
+  })
+  .catch((error) => {
+    logger.error("Error al intentar conectar a la base de datos:", error);
+  });
+
+module.exports  = connection;
+

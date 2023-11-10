@@ -1,61 +1,55 @@
 const connection = require("../../config/connection");
-async function updateDiet(req, res) {
-    const {limit,price} = req.body;
-    connection
-    .query("CALL ACTUALIZARPRECIODIETASALTASCALORIAS(:limit,:price)", {
-      replacements: { limit, price}
-    })
-    .then((result) => {
-        
-      res.status(200).json({
-        messaje:"Operación completada"
-      });
-    }).catch(error =>{
-        res.status(500).json({
-          error: "Error de conexión a la base de datos",
-        });
-    });
+async function dietManagement(req, res) {
+  const {
+    mode,
+    codDiet,
+    dietTitle,
+    dietDescription,
+    dietIngredients,
+    dietCategory,
+    dietDirection,
+    dietCalories,
+    dietCarbohydrates,
+    dietProteins,
+    dietFat,
+    timeDiet,
+    dietPortions,
+    dietIndex,
+    dietPrice,
+    dietImage,
+  } = req.body;
+  try {
+    const ress = await connection.query(
+      `CALL GESTION_DE_VENTA(:mode, :codDiet, :dietTitle, :dietDescription, :dietIngredients,:dietCategory,:dietDirection,:dietCalories, :dietCarbohydrates,:dietProteins, :dietFat, :timeDiet, :dietPortions,:dietIndex,:dietPrice,:dietImage)`,
+      {
+        replacements: {
+          mode,
+          codDiet,
+          dietTitle,
+          dietDescription,
+          dietIngredients,
+          dietCategory,
+          dietDirection,
+          dietCalories,
+          dietCarbohydrates,
+          dietProteins,
+          dietFat,
+          timeDiet,
+          dietPortions,
+          dietIndex,
+          dietPrice,
+          dietImage,
+        },
+      }
+    );
 
+    res.status(400).json({ message: "Operacion completada" });
+  } catch (e) {
+    console.log(e);
+    res.status(400).json({ message: "Error" });
+  }
 }
-async function deletePricelessDiets(req, res) {
-    connection
-    .query("CALL GESTION_DIESTASSINPRECIO()", {
-      replacements: {}
-    })
-    .then((result) => {
-        
-      res.status(200).json({
-        messaje:"Operación completada"
-      });
-    }).catch(error =>{
-        res.status(500).json({
-          error: "Error de conexión a la base de datos",
-        });
-    });
-
-}
-async function getAverageCalories(req, res) {
-    const {category} = req.body;
-    connection
-    .query("CALL OBTENERDIETASPROMEDIOCALORIAS(:category)", {
-      replacements: {category}
-    })
-    .then((result) => {
-        
-      res.status(200).json({
-        messaje:"Operación completada"
-      });
-    }).catch(error =>{
-        res.status(500).json({
-          error: "Error de conexión a la base de datos",
-        });
-    });
-
-}
-
 
 module.exports = {
-  updateDiet,
-  deletePricelessDiets,
-  getAverageCalories
+  dietManagement,
 };
