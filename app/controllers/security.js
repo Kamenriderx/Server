@@ -1,115 +1,92 @@
 const connection = require("../../config/connection");
 
-//Modulos corregidos
+const sendMail = require("../../utils/sendMail");
+const { generateAuthToken } = require("../../utils/authToken");
+const generateCode = require("../../utils/generateCode");
+const { encrypt } = require("../../utils/handlePassword");
 
-async function selectSecurity(req, res) {
+const getUsers = async (req, res, next) => {
   try {
-    const { PV_OPCION } = req.body;
-    const ress = await connection.query(`CALL SEL_SEG(:PV_OPCION)`, {
-      replacements: {
-        PV_OPCION,
+    const users = await USER.findAll();
+    res.status(200).json(users);
+  } catch (error) {
+    next(err);
+  }
+};
+const restorePassword = async (req, res, next) => {
+  try {
+    const { CORREO, COD_VERIFICACION } = req.token;
+    const { USER_PASSWORD } = req.body;
+    console.log(CORREO,COD_VERIFICACION,USER_PASSWORD);
+    const user = await connection.query(
+      `SELECT * FROM TBL_USUARIOS WHERE CORREO = '${CORREO}'`
+    );
+    console.log(user[0]);
+
+    if (user[0].COD_VERIFICACION == COD_VERIFICACION) {
+      //const encriptedPassword = await encrypt(USER_PASSWORD);
+      connection.query(
+        `UPDATE TBL_USUARIOS SET CONTRASENA = '${USER_PASSWORD}' WHERE CORREO = '${CORREO}'`
+      );
+      res
+        .status(200)
+        .json({ message: "Contraseña restablecida correctamente" });
+    } else {
+      res
+        .status(500)
+        .json({ message: "No se ha podido reestablecer la contraseña " });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+const sendRestoreEmail = async (req, res) => {
+  const { CORREO } = req.body;
+  const VERIFICATION_CODE = generateCode();
+  console.log(CORREO, "  ", VERIFICATION_CODE);
+  try {
+    const user = await connection.query(
+      `SELECT * FROM TBL_USUARIOS WHERE COD_USUARIO = '${CORREO}'`
+    );
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "No exite un usuario con ese correo electronico" });
+    }
+
+    await connection.query(
+      `UPDATE TBL_USUARIOS SET COD_VERIFICACION = '${VERIFICATION_CODE}' WHERE CORREO = '${CORREO}'`
+    );
+
+    const token = generateAuthToken(
+      {
+        CORREO,
+        VERIFICATION_CODE,
       },
-    });
+      "5m"
+    );
 
-    res.status(200).json(results[0]);
-  } catch (e) {
-    res.status(500).send({ message: "Algo salio mal" });
-  }
-}
-
-
-
-//GET
-//SELECCIONAR MODULO SEGURIDAD
-app.get("/SEL_SEG", (req, res) => {
-  try {
-    const { PV_OPCION } = req.body;
-
-    const consulta = `CALL SEL_SEG('${PV_OPCION}')`;
-    mysqlConnection.query(consulta, (error, results) => {
-      if (error) throw error;
-      if (results.length > 0) {
-        res.status(200).json(results[0]);
-      } else {
-        res.send(error);
-      }
-    });
+    const options = {
+      subject: "Recuperación de contraseña",
+    };
+    sendMail(CORREO, options, "resetPassword", { token })
+      .then((response) => {
+        res
+          .status(200)
+          .json({
+            message: `Se ha enviado un correo de verificación a ${CORREO}`,
+            data: response,
+          });
+      })
+      .catch((error) => {
+        res.status(500).json({ error: error.message });
+      });
   } catch (error) {
-    res.send(error);
+    res.status(500).json({ error: error.message });
   }
-});
-
-//POST
-// Registrar Seguridad
-app.post("/reg_SEGURIDAD", (req, res) => {
-  try {
-    const {
-      PV_ACCION,
-      NOM_ROL,
-      DES_ROL,
-      NOM_OBJETO,
-      DES_OBJETO,
-      TIP_OBJETO,
-      LEER,
-      ESCRIBIR,
-      ACTUALIZAR,
-      BORRAR,
-      PREGUNTA,
-      RESPUESTA,
-      PARAMETRO,
-      VALOR,
-      ESTADO,
-      CONTRASENA,
-    } = req.body;
-    const consulta = `CALL ING_SEG('${PV_ACCION}','${NOM_ROL}','${DES_ROL}','${NOM_OBJETO}','${DES_OBJETO}','${TIP_OBJETO}','${LEER}','${ESCRIBIR}','${ACTUALIZAR}','${BORRAR}','${PREGUNTA}','${RESPUESTA}','${PARAMETRO}','${VALOR}','${ESTADO}','${CONTRASENA}')`;
-    mysqlConnection.query(consulta, (error) => {
-      if (!error) {
-        res.json({
-          Status: "Registrado exitosamente",
-        });
-      } else {
-        console.log(error);
-      }
-    });
-  } catch (error) {
-    res.send(error);
-  }
-});
-
-//PUT
-// ACTUALIZAR SEGURIDAD
-app.put("/act_SEGURIDAD", (req, res) => {
-  try {
-    const {
-      COD_USRCLI,
-      ID_PERSONA,
-      NOM_PERSONA,
-      SEX_PERSONA,
-      IND_CIVIL,
-      EDA_PERSONA,
-      TIP_PERSONA,
-      NOM_PAIS,
-      NOM_DEPARTAMENTO,
-      NOM_CIUDAD,
-      NOM_COLONIA,
-      NOM_CALLE,
-      NUM_TELEFONO,
-      TIP_TELEFONO,
-      NOM_CORREO,
-      TIP_CORREO,
-      CONTRASENA,
-    } = req.body;
-    const consulta = `CALL UPD_INF_USUARIO('${COD_USRCLI}','${ID_PERSONA}','${NOM_PERSONA}','${SEX_PERSONA}','${IND_CIVIL}','${EDA_PERSONA}','${TIP_PERSONA}','${NOM_PAIS}','${NOM_DEPARTAMENTO}','${NOM_CIUDAD}','${NOM_COLONIA}','${NOM_CALLE}','${NUM_TELEFONO}','${TIP_TELEFONO}','${NOM_CORREO}','${TIP_CORREO}','${CONTRASENA}')`;
-    mysqlConnection.query(consulta, (error) => {
-      if (!error) {
-        res.json({
-          Status: "Actualizado exitosamente",
-        });
-      } else {
-        console.log(error);
-      }
-    });
-  } catch (error) {
-    res.send(error);
-  }
-});
+};
+module.exports = {
+  sendRestoreEmail,
+  restorePassword,
+};
