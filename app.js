@@ -1,6 +1,12 @@
 const express = require('express') ;
 const app = express();
-const http = require('http').createServer(app);
+const fs = require('fs');
+const options = {
+  key: fs.readFileSync('./private-key.pem'),
+  cert: fs.readFileSync('./certificate.pem'),
+};
+
+const http = require('http').createServer(options,app);
 const configCors = require('./config/cors');
 const path = require('path');
 const bodyParser = require('body-parser');
