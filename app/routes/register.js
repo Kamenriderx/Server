@@ -7,7 +7,7 @@ const  authToken = require("../middlewares/authToken");
 
 router.post("/login",login);
 router.post("/addUser",authToken,addUser);
-router.get("/getUsers",authToken,getUser);
+router.get("/getUsers",getUser);
 
 
 module.exports = router
